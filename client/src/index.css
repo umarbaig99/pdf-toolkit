@@ -1,38 +1,53 @@
 @import "tailwindcss";
+@config "../tailwind.config.js";
+
+@layer base {
+    body {
+        @apply bg-slate-50 text-slate-900 font-sans antialiased;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        @apply font-heading font-bold;
+    }
+}
 
 @layer utilities {
-    .animate-blob {
-        animation: blob 7s infinite;
+    .glass {
+        @apply bg-white/70 backdrop-blur-lg border border-white/20 shadow-xl;
     }
 
-    .animation-delay-2000 {
-        animation-delay: 2s;
+    .glass-dark {
+        @apply bg-slate-900/70 backdrop-blur-lg border border-white/10 shadow-xl;
     }
 
-    .animation-delay-4000 {
-        animation-delay: 4s;
-    }
-}
-
-@keyframes blob {
-    0% {
-        transform: translate(0px, 0px) scale(1);
+    .text-gradient {
+        @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-600 to-accent-600;
     }
 
-    33% {
-        transform: translate(30px, -50px) scale(1.1);
-    }
-
-    66% {
-        transform: translate(-20px, 20px) scale(0.9);
-    }
-
-    100% {
-        transform: translate(0px, 0px) scale(1);
+    .card-hover {
+        @apply transition-all duration-300 hover:shadow-2xl hover:-translate-y-1;
     }
 }
 
-body {
-    background-color: #f9fafb;
-    /* gray-50 */
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-400;
 }

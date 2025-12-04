@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { API_URL } from '../config';
 import PdfPreview from './PdfPreview';
 import { Clock, Download, Eye, FileText } from 'lucide-react';
 
@@ -9,7 +10,7 @@ const History = () => {
 
     const fetchHistory = async () => {
         try {
-            const res = await axios.get('http://localhost:3002/api/pdf/history');
+            const res = await axios.get(`${API_URL}/api/pdf/history`);
             setHistory(res.data);
         } catch (err) {
             console.error('Failed to fetch history', err);
@@ -59,13 +60,13 @@ const History = () => {
                                     </td>
                                     <td className="px-8 py-5 text-right space-x-2">
                                         <button
-                                            onClick={() => setPreviewUrl(`http://localhost:3002${file.url}`)}
+                                            onClick={() => setPreviewUrl(`${API_URL}${file.url}`)}
                                             className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"
                                         >
                                             <Eye className="h-3 w-3 mr-1" /> Preview
                                         </button>
                                         <a
-                                            href={`http://localhost:3002${file.url}`}
+                                            href={`${API_URL}${file.url}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"

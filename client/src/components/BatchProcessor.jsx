@@ -1,18 +1,26 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Layers, Download, Loader2 } from 'lucide-react';
-import FeatureCard from './FeatureCard';
+import { API_URL } from '../config';
+import { Layers, Download, Loader2, Plus, FileText, X } from 'lucide-react';
+import ToolLayout from './ToolLayout';
 import toast from 'react-hot-toast';
 
 const BatchProcessor = () => {
-    const [files, setFiles] = useState(null);
+    const [files, setFiles] = useState([]);
     const [processing, setProcessing] = useState(false);
     const [downloadUrl, setDownloadUrl] = useState('');
     const [error, setError] = useState('');
 
     const handleFileChange = (e) => {
-        setFiles(e.target.files);
-        setError('');
+        if (e.target.files && e.target.files.length > 0) {
+            setFiles(Array.from(e.target.files));
+            setError('');
+            setDownloadUrl('');
+        }
+    };
+
+    const removeFile = (index) => {
+        setFiles(files.filter((_, i) => i !== index));
         setDownloadUrl('');
     };
 
@@ -33,10 +41,10 @@ const BatchProcessor = () => {
         const loadingToast = toast.loading('Processing batch...');
 
         try {
-            const res = await axios.post('http://localhost:3002/api/pdf/batch-process', formData, {
+            const res = await axios.post(`${API_URL}/api/pdf/batch-process`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
-            setDownloadUrl(`http://localhost:3002${res.data.downloadUrl}`);
+            setDownloadUrl(`${API_URL}${res.data.downloadUrl}`);
             toast.success('Batch processed successfully!', { id: loadingToast });
         } catch (err) {
             console.error(err);
@@ -48,53 +56,101 @@ const BatchProcessor = () => {
     };
 
     return (
-        <FeatureCard
+        <ToolLayout
             title="Batch Image to PDF"
-            description="Convert multiple images into a single PDF."
+            description="Convert multiple images into a single PDF document instantly."
             icon={Layers}
-            color="indigo"
+            color="accent"
         >
-            <input
-                type="file"
-                accept="image/png, image/jpeg"
-                multiple
-                onChange={handleFileChange}
-                className="block w-full text-sm text-gray-500
-          file:mr-4 file:py-2 file:px-4
-          file:rounded-full file:border-0
-          file:text-sm file:font-semibold
-          file:bg-indigo-50 file:text-indigo-700
-          hover:file:bg-indigo-100 cursor-pointer"
-            />
+            <div className="space-y-8">
+                {/* File Upload Area */}
+                <div className="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center hover:border-accent-400 transition-colors bg-slate-50/50">
+                    <input
+                        type="file"
+                        accept="image/png, image/jpeg"
+                        multiple
+                        onChange={handleFileChange}
+                        className="hidden"
+                        id="file-upload"
+                    />
+                    <label
+                        htmlFor="file-upload"
+                        className="cursor-pointer flex flex-col items-center gap-4"
+                    >
+                        <div className="p-4 bg-white rounded-full shadow-sm text-accent-600">
+                            <Plus className="h-8 w-8" />
+                        </div>
+                        <div>
+                            <p className="text-lg font-medium text-slate-700">Click to upload images</p>
+                            <p className="text-sm text-slate-400">PNG, JPG files supported</p>
+                        </div>
+                    </label>
+                </div>
 
-            <button
-                onClick={handleProcess}
-                disabled={processing}
-                className={`w-full py-2.5 rounded-lg text-white font-medium transition-all flex items-center justify-center gap-2
-          ${processing ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 shadow-md hover:shadow-lg'}`}
-            >
-                {processing ? (
-                    <>
-                        <Loader2 className="h-4 w-4 animate-spin" /> Processing...
-                    </>
-                ) : (
-                    'Process Batch'
+                {/* File List */}
+                {files.length > 0 && (
+                    <div className="space-y-3">
+                        <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Selected Files ({files.length})</h3>
+                        <div className="grid grid-cols-1 gap-3">
+                            {files.map((file, index) => (
+                                <div key={index} className="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl shadow-sm">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-indigo-50 text-indigo-500 rounded-lg">
+                                            <FileText className="h-5 w-5" />
+                                        </div>
+                                        <div>
+                                            <p className="font-medium text-slate-700 text-sm">{file.name}</p>
+                                            <p className="text-xs text-slate-400">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => removeFile(index)}
+                                        className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 )}
-            </button>
 
-            {error && <p className="text-red-500 text-xs text-center">{error}</p>}
+                {/* Actions */}
+                <div className="flex flex-col gap-4">
+                    <button
+                        onClick={handleProcess}
+                        disabled={processing || files.length === 0}
+                        className={`w-full py-4 rounded-xl text-white font-bold text-lg transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2
+                        ${processing || files.length === 0
+                                ? 'bg-slate-300 cursor-not-allowed shadow-none transform-none'
+                                : 'bg-gradient-to-r from-accent-600 to-accent-500'}`}
+                    >
+                        {processing ? (
+                            <>
+                                <Loader2 className="h-6 w-6 animate-spin" /> Processing...
+                            </>
+                        ) : (
+                            <>
+                                <Layers className="h-6 w-6" /> Process Batch
+                            </>
+                        )}
+                    </button>
 
-            {downloadUrl && (
-                <a
-                    href={downloadUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block w-full py-2.5 text-center border border-indigo-200 text-indigo-700 rounded-lg hover:bg-indigo-50 transition-colors font-medium flex items-center justify-center gap-2"
-                >
-                    <Download className="h-4 w-4" /> Download Batch PDF
-                </a>
-            )}
-        </FeatureCard>
+                    {error && <p className="text-red-500 text-sm text-center bg-red-50 py-2 rounded-lg">{error}</p>}
+
+                    {downloadUrl && (
+                        <a
+                            href={downloadUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block w-full py-4 text-center border-2 border-accent-100 text-accent-600 rounded-xl hover:bg-accent-50 transition-colors font-bold text-lg flex items-center justify-center gap-2"
+                        >
+                            <Download className="h-6 w-6" /> Download Batch PDF
+                        </a>
+                    )}
+                </div>
+            </div>
+        </ToolLayout>
     );
 };
 

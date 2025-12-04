@@ -1,23 +1,8 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const fs = require('fs');
-const path = require('path');
 
-const usersFile = path.join(__dirname, '../users.json');
-
-// Helper to read users
-const getUsers = () => {
-    if (!fs.existsSync(usersFile)) {
-        return [];
-    }
-    const data = fs.readFileSync(usersFile);
-    return JSON.parse(data);
-};
-
-// Helper to save users
-const saveUsers = (users) => {
-    fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
-};
+// In-memory user storage (Data will be lost on server restart)
+const users = [];
 
 exports.register = async (req, res) => {
     const { email, password, name } = req.body;
@@ -26,7 +11,6 @@ exports.register = async (req, res) => {
         return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const users = getUsers();
     if (users.find(u => u.email === email)) {
         return res.status(400).json({ error: 'User already exists' });
     }
@@ -40,7 +24,6 @@ exports.register = async (req, res) => {
     };
 
     users.push(newUser);
-    saveUsers(users);
 
     const token = jwt.sign({ id: newUser.id }, process.env.JWT_SECRET || 'secret_key', {
         expiresIn: '24h'
@@ -52,7 +35,6 @@ exports.register = async (req, res) => {
 exports.login = async (req, res) => {
     const { email, password } = req.body;
 
-    const users = getUsers();
     const user = users.find(u => u.email === email);
 
     if (!user) {
@@ -72,7 +54,6 @@ exports.login = async (req, res) => {
 };
 
 exports.me = (req, res) => {
-    const users = getUsers();
     const user = users.find(u => u.id === req.userId);
     if (!user) return res.status(404).json({ error: 'User not found' });
 

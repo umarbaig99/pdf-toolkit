@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { API_URL } from '../config';
 
 const FileUpload = () => {
     const [file, setFile] = useState(null);
@@ -22,7 +23,7 @@ const FileUpload = () => {
 
         setUploading(true);
         try {
-            const res = await axios.post('http://localhost:3002/api/pdf/upload', formData, {
+            const res = await axios.post(`${API_URL}/api/pdf/upload`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },

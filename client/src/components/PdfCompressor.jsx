@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Minimize2, Download, Loader2 } from 'lucide-react';
-import FeatureCard from './FeatureCard';
+import { API_URL } from '../config';
+import { Minimize2, Download, Loader2, Plus, FileText, X } from 'lucide-react';
+import ToolLayout from './ToolLayout';
 import toast from 'react-hot-toast';
 
 const PdfCompressor = () => {
@@ -11,8 +12,15 @@ const PdfCompressor = () => {
     const [error, setError] = useState('');
 
     const handleFileChange = (e) => {
-        setFile(e.target.files[0]);
-        setError('');
+        if (e.target.files && e.target.files[0]) {
+            setFile(e.target.files[0]);
+            setError('');
+            setDownloadUrl('');
+        }
+    };
+
+    const removeFile = () => {
+        setFile(null);
         setDownloadUrl('');
     };
 
@@ -31,10 +39,10 @@ const PdfCompressor = () => {
         const loadingToast = toast.loading('Compressing PDF...');
 
         try {
-            const res = await axios.post('http://localhost:3002/api/pdf/compress', formData, {
+            const res = await axios.post(`${API_URL}/api/pdf/compress`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
-            setDownloadUrl(`http://localhost:3002${res.data.downloadUrl}`);
+            setDownloadUrl(`${API_URL}${res.data.downloadUrl}`);
             toast.success('PDF compressed successfully!', { id: loadingToast });
         } catch (err) {
             console.error(err);
@@ -46,52 +54,92 @@ const PdfCompressor = () => {
     };
 
     return (
-        <FeatureCard
+        <ToolLayout
             title="Compress PDF"
-            description="Reduce file size while maintaining quality."
+            description="Reduce file size while maintaining quality. Perfect for emailing or uploading."
             icon={Minimize2}
-            color="green"
+            color="brand"
         >
-            <input
-                type="file"
-                accept=".pdf"
-                onChange={handleFileChange}
-                className="block w-full text-sm text-gray-500
-          file:mr-4 file:py-2 file:px-4
-          file:rounded-full file:border-0
-          file:text-sm file:font-semibold
-          file:bg-green-50 file:text-green-700
-          hover:file:bg-green-100 cursor-pointer"
-            />
-
-            <button
-                onClick={handleCompress}
-                disabled={compressing}
-                className={`w-full py-2.5 rounded-lg text-white font-medium transition-all flex items-center justify-center gap-2
-          ${compressing ? 'bg-green-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 shadow-md hover:shadow-lg'}`}
-            >
-                {compressing ? (
-                    <>
-                        <Loader2 className="h-4 w-4 animate-spin" /> Compressing...
-                    </>
+            <div className="space-y-8">
+                {/* File Upload Area */}
+                {!file ? (
+                    <div className="border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center hover:border-brand-400 transition-colors bg-slate-50/50">
+                        <input
+                            type="file"
+                            accept=".pdf"
+                            onChange={handleFileChange}
+                            className="hidden"
+                            id="file-upload"
+                        />
+                        <label
+                            htmlFor="file-upload"
+                            className="cursor-pointer flex flex-col items-center gap-4"
+                        >
+                            <div className="p-4 bg-white rounded-full shadow-sm text-brand-600">
+                                <Plus className="h-8 w-8" />
+                            </div>
+                            <div>
+                                <p className="text-lg font-medium text-slate-700">Click to upload or drag and drop</p>
+                                <p className="text-sm text-slate-400">PDF files only</p>
+                            </div>
+                        </label>
+                    </div>
                 ) : (
-                    'Compress PDF'
+                    <div className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-xl shadow-sm">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-red-50 text-red-500 rounded-lg">
+                                <FileText className="h-6 w-6" />
+                            </div>
+                            <div>
+                                <p className="font-medium text-slate-700">{file.name}</p>
+                                <p className="text-sm text-slate-400">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={removeFile}
+                            className="p-2 text-slate-400 hover:text-red-500 transition-colors"
+                        >
+                            <X className="h-5 w-5" />
+                        </button>
+                    </div>
                 )}
-            </button>
 
-            {error && <p className="text-red-500 text-xs text-center">{error}</p>}
+                {/* Actions */}
+                <div className="flex flex-col gap-4">
+                    <button
+                        onClick={handleCompress}
+                        disabled={compressing || !file}
+                        className={`w-full py-4 rounded-xl text-white font-bold text-lg transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2
+                        ${compressing || !file
+                                ? 'bg-slate-300 cursor-not-allowed shadow-none transform-none'
+                                : 'bg-gradient-to-r from-brand-600 to-brand-500'}`}
+                    >
+                        {compressing ? (
+                            <>
+                                <Loader2 className="h-6 w-6 animate-spin" /> Compressing...
+                            </>
+                        ) : (
+                            <>
+                                <Minimize2 className="h-6 w-6" /> Compress PDF
+                            </>
+                        )}
+                    </button>
 
-            {downloadUrl && (
-                <a
-                    href={downloadUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block w-full py-2.5 text-center border border-green-200 text-green-700 rounded-lg hover:bg-green-50 transition-colors font-medium flex items-center justify-center gap-2"
-                >
-                    <Download className="h-4 w-4" /> Download Compressed PDF
-                </a>
-            )}
-        </FeatureCard>
+                    {error && <p className="text-red-500 text-sm text-center bg-red-50 py-2 rounded-lg">{error}</p>}
+
+                    {downloadUrl && (
+                        <a
+                            href={downloadUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block w-full py-4 text-center border-2 border-brand-100 text-brand-600 rounded-xl hover:bg-brand-50 transition-colors font-bold text-lg flex items-center justify-center gap-2"
+                        >
+                            <Download className="h-6 w-6" /> Download Compressed PDF
+                        </a>
+                    )}
+                </div>
+            </div>
+        </ToolLayout>
     );
 };
 
